@@ -1,0 +1,25 @@
+from flask import Blueprint, jsonify, request
+from services.article_service import ArticleService
+
+article_controller = Blueprint('article_controller', __name__)
+article_service = ArticleService()
+
+
+@article_controller.route('/api/articles', methods=['POST'])
+def get_articles():
+    """Fetch and return articles for a specific date as JSON"""
+    try:
+        # Retrieve the date from the JSON body
+        data = request.get_json()
+
+        # Ensure that the 'date' field is present in the request body
+        date = data.get('date', None)
+
+        if not date:
+            return jsonify({"error": "Date parameter is required"}), 400
+
+        # Call the service to get articles for the given date
+        articles = article_service.get_articles_by_date(date)
+        return jsonify({"articles": articles}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
