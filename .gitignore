@@ -1,0 +1,22 @@
+# Ignore virtual environment directory
+.venv/
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+
+# Ignore IDE configuration files (for JetBrains IDEs, VSCode, etc.)
+.idea/
+.vscode/
+
+# Ignore OS specific files
+.DS_Store       # macOS system files
+
+# Ignore log files
+*.log
+
+# Ignore coverage and test result directories
+.coverage
+nosetests.xml
+coverage.xml
+*.coveragerc
