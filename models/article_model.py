@@ -12,9 +12,16 @@ class ArticleModel:
             conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("SELECT id, title, slug, image_path, byline_author, article_detail, created_at, article_date, article_date_and_time FROM news_articles;")
-            articles = cursor.fetchall()
+            columns = [column[0] for column in cursor.description]  # Get column names
+            rows = cursor.fetchall()
+
+            # Convert each row to a dictionary
+            articles = [dict(zip(columns, row)) for row in rows]
+
             cursor.close()
             conn.close()
+            print("Fetched Articles:", articles)
+
             return articles
         except Exception as e:
             print(f"Error fetching articles: {e}")
