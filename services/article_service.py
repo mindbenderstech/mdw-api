@@ -31,7 +31,7 @@ class ArticleService:
             raise
 
     def validate_date(self, datestr):
-        """Validate and convert date string to a date object"""
+        """Validate and convert a date string to a date object"""
         try:
             return datetime.strptime(datestr, '%Y-%m-%d').date()
         except ValueError:
@@ -63,5 +63,5 @@ class ArticleService:
 
     @staticmethod
     def format_date_time(dt):
-        """Convert datetime object to string"""
+        """Convert a datetime object to string"""
         return dt.strftime('%Y-%m-%d %H:%M:%S') if dt else None

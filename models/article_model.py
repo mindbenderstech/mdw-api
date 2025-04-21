@@ -3,7 +3,7 @@ from db import get_db_connection
 
 class ArticleModel:
     def __init__(self):
-        self.db_config = get_db_connection()  # Use db connection in instance
+        self.db_config = get_db_connection()  # Use db connection in an instance
 
     @staticmethod
     def get_all_articles():
