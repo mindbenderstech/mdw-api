@@ -23,3 +23,12 @@ def get_articles():
         return jsonify({"articles": articles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@article_controller.route('/api/articles/all', methods=['GET'])
+def get_all_articles():
+    """Fetch and return all articles as JSON"""
+    try:
+        articles = article_service.get_all_articles()
+        return jsonify({"articles": articles}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

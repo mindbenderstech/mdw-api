@@ -30,6 +30,23 @@ class ArticleService:
             logging.exception(f"Unexpected error in getArticlesByDate: {e}")
             raise
 
+    def get_all_articles(self):
+        """
+        Return all articles, sorted by article_date_and_time in ascending order.
+        """
+        try:
+            logging.info("Fetching all articles")
+            # Fetch all articles without filtering by date
+            all_articles = self.articleModel.get_all_articles()
+            sorted_articles = self.filter_and_sort_articles(all_articles, None)
+
+            logging.info(f"Found {len(sorted_articles)} articles.")
+            return [self.format_article(article) for article in sorted_articles]
+
+        except Exception as e:
+            logging.exception("Unexpected error in getAllArticles: {e}")
+            raise
+
     def validate_date(self, datestr):
         """Validate and convert a date string to a date object"""
         try:
@@ -39,8 +56,15 @@ class ArticleService:
 
     def filter_and_sort_articles(self, articles, target_date):
         """Filter by date and sort by article_date_and_time ascending"""
-        filtered = [a for a in articles if a["article_date"] == target_date]
-        return sorted(filtered, key=lambda a: a.get("article_date_and_time") or datetime.min)
+        if target_date:
+            # Filter by date only if a target date is provided
+            filtered = [a for a in articles if a["article_date"] == target_date]
+        else:
+            # If no date is provided, we simply return all articles (i.e., no filtering)
+            filtered = articles
+
+        # Always sort by article_date_and_time
+        return sorted(filtered, key=lambda a: a.get("article_date_and_time") or datetime.min, reverse=True)
 
     def format_article(self, article):
         """Prepare the article dictionary for JSON output"""
