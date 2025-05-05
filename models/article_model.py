@@ -11,7 +11,7 @@ class ArticleModel:
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
-            cursor.execute("SELECT id, title, slug, image_path, byline_author, article_detail, created_at, article_date, article_date_and_time FROM news_articles;")
+            cursor.execute("SELECT id, unique_id, news_source_url, title, slug, image_path, byline_author, article_detail, created_at, article_date, article_date_and_time FROM news_articles;")
             columns = [column[0] for column in cursor.description]  # Get column names
             rows = cursor.fetchall()
 
@@ -26,3 +26,28 @@ class ArticleModel:
         except Exception as e:
             print(f"Error fetching articles: {e}")
             return []
+
+    @staticmethod
+    def get_article_by_unique_id(unique_id):
+        """Fetch a specific article from the database by unique_id."""
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT id, title, news_source_url, unique_id, slug, image_path, byline_author, article_detail, created_at, article_date, article_date_and_time FROM news_articles WHERE unique_id = %s;",
+                (unique_id,))
+            row = cursor.fetchone()
+
+            if row:
+                columns = [column[0] for column in cursor.description]  # Get column names
+                article = dict(zip(columns, row))
+                cursor.close()
+                conn.close()
+                return article
+            else:
+                cursor.close()
+                conn.close()
+                return None
+        except Exception as e:
+            print(f"Error fetching article by unique_id: {e}")
+            return None

@@ -32,3 +32,26 @@ def get_all_articles():
         return jsonify({"articles": articles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+# to get specific article by unique_id
+@article_controller.route('/api/articles/<unique_id>', methods=['GET'])
+def get_article_by_unique_id(unique_id):
+    """Fetch and return a specific article by unique_id as JSON"""
+    try:
+        article = article_service.get_article_by_unique_id(unique_id)
+        if not article:
+            return jsonify({"error": "Article not found"}), 404
+        return jsonify({"article": article}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# to get news articles by category keyword in URL
+@article_controller.route('/api/articles/category/<category>', methods=['GET'])
+def get_articles_by_category(category):
+    """Fetch and return articles filtered by category keyword in URL"""
+    try:
+        articles = article_service.get_articles_by_category(category)
+        return jsonify({"articles": articles}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

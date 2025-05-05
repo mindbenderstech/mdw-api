@@ -30,6 +30,34 @@ class ArticleService:
             logging.exception(f"Unexpected error in getArticlesByDate: {e}")
             raise
 
+    def get_article_by_unique_id(self, unique_id):
+        """Return a specific article by unique_id."""
+        try:
+            logging.info(f"Fetching article by unique_id: {unique_id}")
+            article = self.articleModel.get_article_by_unique_id(unique_id)
+            if article:
+                return self.format_article(article)
+            else:
+                return None
+        except Exception as e:
+            logging.exception(f"Unexpected error in getArticleByUniqueId: {e}")
+            raise
+
+    def get_articles_by_category(self, category_keyword):
+        """Return articles where the source URL contains the given category keyword"""
+        try:
+            logging.info(f"Filtering articles by category: {category_keyword}")
+            all_articles = self.articleModel.get_all_articles()
+            filtered = [
+                a for a in all_articles
+                if a.get("news_source_url") and category_keyword.lower() in a["news_source_url"].lower()
+            ]
+            sorted_articles = self.filter_and_sort_articles(filtered, None)
+            return [self.format_article(article) for article in sorted_articles]
+        except Exception as e:
+            logging.exception(f"Error filtering articles by category '{category_keyword}': {e}")
+            raise
+
     def get_all_articles(self):
         """
         Return all articles, sorted by article_date_and_time in ascending order.
@@ -70,6 +98,8 @@ class ArticleService:
         """Prepare the article dictionary for JSON output"""
         return {
             "id": article["id"],
+            "unique_id": article["unique_id"],
+            "news_source_url": article["news_source_url"],
             "title": self.clean(article["title"]),
             "slug": self.clean(article["slug"]),
             "image_path": article["image_path"],
