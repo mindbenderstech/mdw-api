@@ -45,4 +45,6 @@ logger.info("App is starting...")
 if __name__ == '__main__':
     # Log when the app runs
     logger.info("Running the Flask application...")
-    app.run(debug=True)
+    # previous code app.run(debug=True)
+
+    app.run(host='0.0.0.0', debug=True)
