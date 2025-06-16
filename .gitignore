@@ -7,8 +7,6 @@ __pycache__/
 
 .env*
 
-lang_config.py
-
 # Ignore IDE configuration files (for JetBrains IDEs, VSCode, etc.)
 .idea/
 .vscode/
