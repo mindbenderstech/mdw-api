@@ -1,5 +1,7 @@
 import logging
-from flask import Flask
+import os
+
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 
 from controllers.article_controller import article_controller
@@ -22,15 +24,14 @@ app = Flask(__name__)
 
 CORS(app)
 
-# Remove or comment out this route since images are served by S3 directly
-# IMAGE_DIR = r'F:\Media World\mdw-scraper\images'
+IMAGE_DIR = r'F:\Media World\mdw-scraper\images'
 
-# @app.route('/images/<path:filename>')
-# def serve_image(filename):
-#     normalized_filename = filename.replace("\\", "/")
-#     full_image_path = os.path.join(IMAGE_DIR, normalized_filename)
-#     logger.info(f"Serving image from path: {full_image_path}")
-#     return send_from_directory(IMAGE_DIR, normalized_filename)
+@app.route('/images/<path:filename>')
+def serve_image(filename):
+    normalized_filename = filename.replace("\\", "/")
+    full_image_path = os.path.join(IMAGE_DIR, normalized_filename)
+    logger.info(f"Serving image from path: {full_image_path}")
+    return send_from_directory(IMAGE_DIR, normalized_filename)
 
 
 # Register Blueprints

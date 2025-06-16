@@ -9,36 +9,47 @@ article_service = ArticleService()
 def get_articles():
     """Fetch and return articles for a specific date as JSON"""
     try:
-        # Retrieve the date from the JSON body
+        # Retrieve the date and language from the JSON body
         data = request.get_json()
 
         # Ensure that the 'date' field is present in the request body
         date = data.get('date', None)
+        language = data.get('language', 'marathi')  # Default to 'marathi'
 
         if not date:
             return jsonify({"error": "Date parameter is required"}), 400
 
-        # Call the service to get articles for the given date
-        articles = article_service.get_articles_by_date(date)
+        # Call the service to get articles for the given date and language
+        articles = article_service.get_articles_by_date(date, language)
         return jsonify({"articles": articles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 @article_controller.route('/api/articles/all', methods=['GET'])
 def get_all_articles():
-    """Fetch and return all articles as JSON"""
+    """Fetch and return all articles as JSON based on language"""
     try:
-        articles = article_service.get_all_articles()
+        # Retrieve language from query parameters, default to 'marathi'
+        language = request.args.get('language', 'marathi')
+
+        # Call the service to get all articles for the selected language
+        articles = article_service.get_all_articles(language)
         return jsonify({"articles": articles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# to get specific article by unique_id
+
+# To get a specific article by unique_id
 @article_controller.route('/api/articles/<unique_id>', methods=['GET'])
 def get_article_by_unique_id(unique_id):
     """Fetch and return a specific article by unique_id as JSON"""
     try:
-        article = article_service.get_article_by_unique_id(unique_id)
+        # Retrieve language from query parameters, default to 'marathi'
+        language = request.args.get('language', 'marathi')
+
+        # Call the service to get the article by unique_id and language
+        article = article_service.get_article_by_unique_id(unique_id, language)
         if not article:
             return jsonify({"error": "Article not found"}), 404
         return jsonify({"article": article}), 200
@@ -46,12 +57,22 @@ def get_article_by_unique_id(unique_id):
         return jsonify({"error": str(e)}), 500
 
 
-# to get news articles by category keyword in URL
+# To get news articles by category keyword in the URL
 @article_controller.route('/api/articles/category/<category>', methods=['GET'])
 def get_articles_by_category(category):
     """Fetch and return articles filtered by category keyword in URL"""
     try:
-        articles = article_service.get_articles_by_category(category)
+        # Retrieve language from query parameters, default to 'marathi'
+        language = request.args.get('language', 'marathi')
+
+        # Call the service to get articles by category and language
+        articles = article_service.get_articles_by_category(category, language)
         return jsonify({"articles": articles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@article_controller.route('/api/languages', methods=['GET'])
+def get_supported_languages():
+    """Return the list of supported languages"""
+    from lang_config import LANGUAGE_TABLES
+    return jsonify({"languages": list(LANGUAGE_TABLES.keys())}), 200
