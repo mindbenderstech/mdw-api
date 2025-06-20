@@ -40,16 +40,16 @@ def get_all_articles():
         return jsonify({"error": str(e)}), 500
 
 
-# To get a specific article by unique_id
-@article_controller.route('/api/articles/<unique_id>', methods=['GET'])
-def get_article_by_unique_id(unique_id):
-    """Fetch and return a specific article by unique_id as JSON"""
+# To get a specific article by unique_id_url
+@article_controller.route('/api/articles/<unique_id_url>', methods=['GET'])
+def get_article_by_unique_id_url(unique_id_url):
+    """Fetch and return a specific article by unique_id_url as JSON"""
     try:
         # Retrieve language from query parameters, default to 'marathi'
         language = request.args.get('language', 'marathi')
 
-        # Call the service to get the article by unique_id and language
-        article = article_service.get_article_by_unique_id(unique_id, language)
+        # Call the service to get the article by unique_id_url and language
+        article = article_service.get_article_by_unique_id_url(unique_id_url, language)
         if not article:
             return jsonify({"error": "Article not found"}), 404
         return jsonify({"article": article}), 200

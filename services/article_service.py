@@ -30,17 +30,17 @@ class ArticleService:
             logging.exception(f"Unexpected error in get_articles_by_date: {e}")
             raise
 
-    def get_article_by_unique_id(self, unique_id, language="marathi"):
-        """Return a specific article by unique_id, filtered by language."""
+    def get_article_by_unique_id_url(self, unique_id_url, language="marathi"):
+        """Return a specific article by unique_id_url, filtered by language."""
         try:
-            logging.info(f"Fetching article by unique_id: {unique_id} and language: {language}")
-            article = self.articleModel.get_article_by_unique_id(unique_id, language)
+            logging.info(f"Fetching article by unique_id_url: {unique_id_url} and language: {language}")
+            article = self.articleModel.get_article_by_unique_id_url(unique_id_url, language)
             if article:
                 return self.format_article(article)
             else:
                 return None
         except Exception as e:
-            logging.exception(f"Unexpected error in get_article_by_unique_id: {e}")
+            logging.exception(f"Unexpected error in get_article_by_unique_id_url: {e}")
             raise
 
     def get_articles_by_category(self, category_keyword, language="marathi"):
@@ -99,6 +99,7 @@ class ArticleService:
         return {
             "id": article["id"],
             "unique_id": article["unique_id"],
+            "unique_id_url": article["unique_id_url"],
             "news_source_url": article["news_source_url"],
             "title": self.clean(article["title"]),
             "slug": self.clean(article["slug"]),
