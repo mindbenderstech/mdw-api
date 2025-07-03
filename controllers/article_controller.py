@@ -1,9 +1,17 @@
+import os
+from dotenv import load_dotenv
 from flask import Blueprint, jsonify, request
 from services.article_service import ArticleService
 
-article_controller = Blueprint('article_controller', __name__)
-article_service = ArticleService()
+load_dotenv()
 
+article_controller = Blueprint('article_controller', __name__)
+
+# Define default_language here
+default_language = os.getenv("DEFAULT_LANGUAGE", "hindi")  # Default to 'hindi' if not set
+
+# Initialize ArticleService with default_language
+article_service = ArticleService(default_language)
 
 @article_controller.route('/api/articles', methods=['POST'])
 def get_articles():
@@ -14,7 +22,7 @@ def get_articles():
 
         # Ensure that the 'date' field is present in the request body
         date = data.get('date', None)
-        language = data.get('language', 'marathi')  # Default to 'marathi'
+        language = data.get('language', default_language)  # Use default_language if not provided
 
         if not date:
             return jsonify({"error": "Date parameter is required"}), 400
@@ -30,8 +38,8 @@ def get_articles():
 def get_all_articles():
     """Fetch and return all articles as JSON based on language"""
     try:
-        # Retrieve language from query parameters, default to 'marathi'
-        language = request.args.get('language', 'marathi')
+        # Retrieve language from query parameters, default to 'hindi'
+        language = request.args.get('language', default_language)
 
         # Call the service to get all articles for the selected language
         articles = article_service.get_all_articles(language)
@@ -45,8 +53,8 @@ def get_all_articles():
 def get_article_by_unique_id_url(unique_id_url):
     """Fetch and return a specific article by unique_id_url as JSON"""
     try:
-        # Retrieve language from query parameters, default to 'marathi'
-        language = request.args.get('language', 'marathi')
+        # Retrieve language from query parameters, default to 'hindi'
+        language = request.args.get('language', default_language)
 
         # Call the service to get the article by unique_id_url and language
         article = article_service.get_article_by_unique_id_url(unique_id_url, language)
@@ -62,8 +70,8 @@ def get_article_by_unique_id_url(unique_id_url):
 def get_articles_by_category(category):
     """Fetch and return articles filtered by category keyword in URL"""
     try:
-        # Retrieve language from query parameters, default to 'marathi'
-        language = request.args.get('language', 'marathi')
+        # Retrieve language from query parameters, default to 'hindi'
+        language = request.args.get('language', default_language)
 
         # Call the service to get articles by category and language
         articles = article_service.get_articles_by_category(category, language)

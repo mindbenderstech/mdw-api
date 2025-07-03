@@ -1,19 +1,29 @@
+# services/article_service.py
 import logging
 import re
+import os
 from datetime import datetime
+from dotenv import load_dotenv
 from models.article_model import ArticleModel
-from lang_config import LANGUAGE_TABLES  # Import the language configuration
+
+load_dotenv()
 
 class ArticleService:
-    def __init__(self):
+    def __init__(self, default_language="hindi"):
         self.articleModel = ArticleModel()
 
-    def get_articles_by_date(self, datestr, language="marathi"):
+        # Load default language from environment variable if not provided
+        self.default_language =default_language or os.getenv("DEFAULT_LANGUAGE", "hindi")
+
+    def get_articles_by_date(self, datestr, language=None):
         """
         Return a list of articles published on a given date,
         sorted by article_date_and_time in ascending order.
         """
         try:
+            if language is None:
+                language = self.default_language
+
             request_date = self.validate_date(datestr)
             logging.info(f"Fetching articles for date: {request_date} and language: {language}")
 
@@ -30,9 +40,12 @@ class ArticleService:
             logging.exception(f"Unexpected error in get_articles_by_date: {e}")
             raise
 
-    def get_article_by_unique_id_url(self, unique_id_url, language="marathi"):
+    def get_article_by_unique_id_url(self, unique_id_url, language=None):
         """Return a specific article by unique_id_url, filtered by language."""
         try:
+            if language is None:
+                language = self.default_language
+
             logging.info(f"Fetching article by unique_id_url: {unique_id_url} and language: {language}")
             article = self.articleModel.get_article_by_unique_id_url(unique_id_url, language)
             if article:
@@ -43,9 +56,12 @@ class ArticleService:
             logging.exception(f"Unexpected error in get_article_by_unique_id_url: {e}")
             raise
 
-    def get_articles_by_category(self, category_keyword, language="marathi"):
+    def get_articles_by_category(self, category_keyword, language=None):
         """Return articles filtered by category keyword and language."""
         try:
+            if language is None:
+                language = self.default_language
+
             logging.info(f"Filtering articles by category: {category_keyword} and language: {language}")
             all_articles = self.articleModel.get_all_articles(language)
             filtered = [
@@ -58,11 +74,14 @@ class ArticleService:
             logging.exception(f"Error filtering articles by category '{category_keyword}' and language '{language}': {e}")
             raise
 
-    def get_all_articles(self, language="marathi"):
+    def get_all_articles(self, language=None):
         """
         Return all articles, sorted by article_date_and_time in ascending order, filtered by language.
         """
         try:
+            if language is None:
+                language = self.default_language
+
             logging.info(f"Fetching all articles for language: {language}")
             # Fetch all articles from the model, passing the language parameter
             all_articles = self.articleModel.get_all_articles(language)
