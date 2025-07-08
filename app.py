@@ -6,7 +6,7 @@ from flask_cors import CORS
 from controllers.article_controller import article_controller
 from controllers.actuator_controller import actuator_controller
 import xml.etree.ElementTree as Et
-from datetime import datetime
+from datetime import datetime, timezone
 from lang_config import LANGUAGE_TABLES
 from models.article_model import ArticleModel
 
@@ -54,13 +54,14 @@ def sitemap_index():
     for lang in LANGUAGE_TABLES.keys():
         articles = article_model.get_all_articles(lang)
 
-        latest_timestamp = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S')  # fallback
+        latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')  # fallback
         if articles:
             latest_created_at = max(
                 (a.get("created_at") for a in articles if a.get("created_at")),
                 default=None
             )
             if latest_created_at:
+                latest_created_at: datetime
                 latest_timestamp = latest_created_at.strftime('%Y-%m-%dT%H:%M:%S')
 
         sitemap = Et.SubElement(sitemapindex, "sitemap")
@@ -77,7 +78,11 @@ def language_sitemap(lang):
 
     host_url = request.host_url.rstrip('/')
     article_model = ArticleModel()
-    articles = article_model.get_all_articles(lang)
+    articles = sorted(
+        article_model.get_all_articles(lang),
+        key=lambda a: a.get("article_date_and_time") or datetime.min,
+        reverse=True
+    )
 
     urlset = Et.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
 
@@ -86,7 +91,7 @@ def language_sitemap(lang):
             continue
 
         loc = f"{host_url}/{lang}/{article['unique_id_url']}"
-        lastmod = article["article_date"].isoformat() if article.get("article_date") else None
+        lastmod = article["article_date_and_time"].isoformat() if article.get("article_date_and_time") else None
 
         url_tag = Et.SubElement(urlset, "url")
         Et.SubElement(url_tag, "loc").text = loc
