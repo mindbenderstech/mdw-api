@@ -54,7 +54,7 @@ def sitemap_index():
     for lang in LANGUAGE_TABLES.keys():
         articles = article_model.get_all_articles(lang)
 
-        latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S')  # fallback
+        latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d')  # fallback
         if articles:
             latest_created_at = max(
                 (a.get("created_at") for a in articles if a.get("created_at")),
@@ -62,7 +62,7 @@ def sitemap_index():
             )
             if latest_created_at:
                 latest_created_at: datetime
-                latest_timestamp = latest_created_at.strftime('%Y-%m-%dT%H:%M:%S')
+                latest_timestamp = latest_created_at.strftime('%Y-%m-%d')
 
         sitemap = Et.SubElement(sitemapindex, "sitemap")
         Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-{lang}.xml"
