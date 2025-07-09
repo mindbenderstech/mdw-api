@@ -48,7 +48,7 @@ Sitemap: https://headliness.com/sitemap.xml
 @app.route('/sitemap.xml')
 def sitemap_index():
     host_url = request.host_url.rstrip('/')
-    sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+    sitemapindex = Et.Element("sitemapindex", xmlns="https://www.sitemaps.org/schemas/sitemap/0.9")
     article_model = ArticleModel()
 
     for lang in LANGUAGE_TABLES.keys():
@@ -78,6 +78,7 @@ def language_sitemap(lang):
 
     host_url = request.host_url.rstrip('/')
     article_model = ArticleModel()
+
     articles = sorted(
         article_model.get_all_articles(lang),
         key=lambda a: a.get("article_date_and_time") or datetime.min,
@@ -90,7 +91,7 @@ def language_sitemap(lang):
         if not article.get("unique_id_url"):
             continue
 
-        loc = f"{host_url}/{lang}/{article['unique_id_url']}"
+        loc = f"{host_url}/news/{lang}/{article['unique_id_url']}"
         lastmod = article["article_date_and_time"].isoformat() if article.get("article_date_and_time") else None
 
         url_tag = Et.SubElement(urlset, "url")
