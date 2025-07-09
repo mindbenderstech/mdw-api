@@ -47,7 +47,7 @@ Sitemap: https://headliness.com/sitemap.xml
 
 @app.route('/sitemap.xml')
 def sitemap_index():
-    host_url = "https://www.headliness.com"  # Correct domain for the sitemap
+    host_url = "https://api.headliness.com"  # Correct domain for the sitemap
     sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     article_model = ArticleModel()
 
