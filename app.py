@@ -47,8 +47,8 @@ Sitemap: https://headliness.com/sitemap.xml
 
 @app.route('/sitemap.xml')
 def sitemap_index():
-    host_url = request.host_url.rstrip('/')
-    sitemapindex = Et.Element("sitemapindex", xmlns="https://www.sitemaps.org/schemas/sitemap/0.9")
+    host_url = "https://www.headliness.com"  # Correct domain for the sitemap
+    sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     article_model = ArticleModel()
 
     for lang in LANGUAGE_TABLES.keys():
@@ -76,7 +76,7 @@ def language_sitemap(lang):
     if lang not in LANGUAGE_TABLES:
         return Response("Language not supported", status=404)
 
-    host_url = request.host_url.rstrip('/')
+    host_url = "https://www.headliness.com"
     article_model = ArticleModel()
 
     articles = sorted(
