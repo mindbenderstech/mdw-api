@@ -42,12 +42,12 @@ def robots_txt():
     return Response("""User-agent: *
 Disallow:
 
-Sitemap: https://headliness.com/sitemap.xml
+Sitemap: https://theheadlineworld.com/sitemap.xml
 """, mimetype='text/plain')
 
 @app.route('/sitemap.xml')
 def sitemap_index():
-    host_url = "https://api.headliness.com"  # Correct domain for the sitemap
+    host_url = "https://api.theheadlineworld.com"  # Correct domain for the sitemap
     sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     article_model = ArticleModel()
 
@@ -76,7 +76,7 @@ def language_sitemap(lang):
     if lang not in LANGUAGE_TABLES:
         return Response("Language not supported", status=404)
 
-    host_url = "https://www.headliness.com"
+    host_url = "https://www.theheadlineworld.com"
     article_model = ArticleModel()
 
     articles = sorted(
