@@ -5,6 +5,7 @@ from flask import Flask, send_from_directory, Response, request
 from flask_cors import CORS
 from controllers.article_controller import article_controller
 from controllers.actuator_controller import actuator_controller
+from controllers.auth_controller import auth_controller, init_jwt
 import xml.etree.ElementTree as Et
 from datetime import datetime, timezone
 from lang_config import LANGUAGE_TABLES
@@ -26,7 +27,12 @@ logger = logging.getLogger(__name__)
 # Initialize Flask app
 app = Flask(__name__)
 
+# (Optionally tighten CORS to your admin UI origin)
+# CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": os.getenv("ADMIN_UI_ORIGIN", "http://localhost:3000")}})
 CORS(app)
+
+# ✅ INIT JWT **before** registering blueprints
+init_jwt(app)
 
 IMAGE_DIR = r'F:\Media World\mdw-scraper\images'
 
@@ -37,13 +43,13 @@ def serve_image(filename):
     logger.info(f"Serving image from path: {full_image_path}")
     return send_from_directory(IMAGE_DIR, normalized_filename)
 
-@app.route('/robots.txt')
-def robots_txt():
-    return Response("""User-agent: *
-Disallow:
-
-Sitemap: https://theheadlineworld.com/sitemap.xml
-""", mimetype='text/plain')
+# @app.route('/robots.txt')
+# def robots_txt():
+#     return Response("""User-agent: *
+# Disallow:
+#
+# Sitemap: https://theheadlineworld.com/sitemap.xml
+# """, mimetype='text/plain')
 
 @app.route('/sitemap.xml')
 def sitemap_index():
@@ -108,7 +114,7 @@ def language_sitemap(lang):
 # Register Blueprints
 app.register_blueprint(article_controller)
 app.register_blueprint(actuator_controller)
-
+app.register_blueprint(auth_controller)
 # Log that the app has started
 logger.info("App is starting...")
 

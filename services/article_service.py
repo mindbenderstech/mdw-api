@@ -5,13 +5,13 @@ import os
 from datetime import datetime
 from dotenv import load_dotenv
 from models.article_model import ArticleModel
+from lang_config import LANGUAGE_TABLES
 
 load_dotenv()
 
 class ArticleService:
     def __init__(self, default_language="hindi"):
         self.articleModel = ArticleModel()
-
         # Load default language from environment variable if not provided
         self.default_language =default_language or os.getenv("DEFAULT_LANGUAGE", "hindi")
 
@@ -112,6 +112,50 @@ class ArticleService:
 
         # Always sort by article_date_and_time
         return sorted(filtered, key=lambda a: a.get("article_date_and_time") or datetime.min, reverse=True)
+
+    def save_custom_article(self, data):
+        from db import get_db_connection
+        import uuid
+        import time
+        import random
+
+        language = data["language"]
+        table_name = LANGUAGE_TABLES.get(language)
+        if not table_name:
+            raise ValueError(f"Unsupported language: {language}")
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Generate UUID and unique_id_url
+        unique_id = str(uuid.uuid4())
+        url_tail = data["news_source_url"].split("/")[-1].rsplit("-", 1)[0]
+        timestamp = int(time.time())
+        random_digits = ''.join([str(random.randint(0, 9)) for _ in range(4)])
+        unique_id_url = f"{url_tail}-hdn{timestamp}{random_digits}"
+
+        # Optional fields
+        image_path = data.get("image_path", "")
+        article_datetime = datetime.now()
+
+        cur.execute(f"""
+            INSERT INTO {table_name} 
+            (news_source_url, title, slug, image_path, byline_author, article_detail, article_date, article_date_and_time, unique_id, unique_id_url)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """, (
+            data["news_source_url"], data["title"], data["slug"], image_path,
+            data["byline_author"], data["article_detail"], data["article_date"],
+            article_datetime, unique_id, unique_id_url
+        ))
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return {
+            "unique_id": unique_id,
+            "unique_id_url": unique_id_url,
+            "title": data["title"]
+        }
 
     def format_article(self, article):
         """Prepare the article dictionary for JSON output."""
