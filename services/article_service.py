@@ -1,5 +1,6 @@
 # services/article_service.py
 import logging
+import random
 import re
 import os
 from datetime import datetime
@@ -183,3 +184,20 @@ class ArticleService:
     def format_date_time(dt):
         """Convert a datetime object to string."""
         return dt.strftime('%Y-%m-%d %H:%M:%S') if dt else None
+
+    def latest(self, language=None, limit=6, offset=0):
+        language = language or self.default_language
+        rows = self.articleModel.get_latest_articles(language, limit, offset)
+        return [self.format_article(r) for r in rows]
+
+    def category(self, category_keyword, language=None, limit=8):
+        language = language or self.default_language
+        rows = self.articleModel.get_category_articles(language, category_keyword, limit)
+        return [self.format_article(r) for r in rows]
+
+    def trending(self, language=None, pick=5):
+        language = language or self.default_language
+        pool = self.articleModel.get_random_from_recent(language, recent_count=100, pick=pick)
+        # sample in memory (cheap; pool is small)
+        chosen = random.sample(pool, k=min(pick, len(pool)))
+        return [self.format_article(r) for r in chosen]

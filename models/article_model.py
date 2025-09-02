@@ -63,3 +63,61 @@ class ArticleModel:
         except Exception as e:
             print(f"Error fetching article by unique_id_url from {table_name}: {e}")
             return None
+
+    @staticmethod
+    def get_latest_articles(language, limit=6, offset=0):
+        table = LANGUAGE_TABLES.get(language)
+        if not table: raise ValueError(f"Language '{language}' is not supported.")
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(f"""
+            SELECT id, unique_id, unique_id_url, news_source_url, title, slug, image_path,
+                   byline_author, article_detail, created_at, article_date, article_date_and_time
+            FROM {table}
+            ORDER BY article_date_and_time DESC
+            LIMIT %s OFFSET %s
+        """, (limit, offset))
+        cols = [c[0] for c in cur.description]
+        rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        cur.close(); conn.close()
+        return rows
+
+    @staticmethod
+    def get_category_articles(language, category_keyword, limit=8):
+        table = LANGUAGE_TABLES.get(language)
+        if not table: raise ValueError(f"Language '{language}' is not supported.")
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # Use ILIKE for case-insensitive search; index advice below
+        cur.execute(f"""
+            SELECT id, unique_id, unique_id_url, news_source_url, title, slug, image_path,
+                   byline_author, article_detail, created_at, article_date, article_date_and_time
+            FROM {table}
+            WHERE news_source_url ILIKE %s
+            ORDER BY article_date_and_time DESC
+            LIMIT %s
+        """, (f"%{category_keyword}%", limit))
+        cols = [c[0] for c in cur.description]
+        rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        cur.close(); conn.close()
+        return rows
+
+    @staticmethod
+    def get_random_from_recent(language, recent_count=100, pick=5):
+        # "Trending" without heavy ORDER BY RANDOM() on the whole table:
+        # grab recent N and sample in app/service.
+        table = LANGUAGE_TABLES.get(language)
+        if not table: raise ValueError(f"Language '{language}' is not supported.")
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(f"""
+            SELECT id, unique_id, unique_id_url, news_source_url, title, slug, image_path,
+                   byline_author, article_detail, created_at, article_date, article_date_and_time
+            FROM {table}
+            ORDER BY article_date_and_time DESC
+            LIMIT %s
+        """, (recent_count,))
+        cols = [c[0] for c in cur.description]
+        rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+        cur.close(); conn.close()
+        return rows

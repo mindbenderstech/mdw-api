@@ -203,3 +203,33 @@ def submit_article():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@article_controller.route('/api/articles/latest', methods=['GET'])
+def latest_articles():
+    try:
+        language = request.args.get('language', default_language)
+        limit = int(request.args.get('limit', 6))
+        offset = int(request.args.get('offset', 0))
+        data = article_service.latest(language, limit, offset)
+        return jsonify({"articles": data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@article_controller.route('/api/articles/category/<category>/latest', methods=['GET'])
+def latest_by_category(category):
+    try:
+        language = request.args.get('language', default_language)
+        limit = int(request.args.get('limit', 8))
+        data = article_service.category(category, language, limit)
+        return jsonify({"articles": data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@article_controller.route('/api/articles/trending', methods=['GET'])
+def trending_articles():
+    try:
+        language = request.args.get('language', default_language)
+        pick = int(request.args.get('pick', 5))
+        data = article_service.trending(language, pick)
+        return jsonify({"articles": data}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
