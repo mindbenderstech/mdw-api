@@ -53,7 +53,7 @@ def language_sitemap(lang):
     now = datetime.now(timezone.utc)
 
     # Set your timeframe for recent articles (e.g., last 24 hours)
-    time_threshold = now - timedelta(hours=12)
+    time_threshold = now - timedelta(days=2)
 
     # Filter articles that are within the last 24 hours
     recent_articles = sorted(
