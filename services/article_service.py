@@ -201,3 +201,19 @@ class ArticleService:
         # sample in memory (cheap; pool is small)
         chosen = random.sample(pool, k=min(pick, len(pool)))
         return [self.format_article(r) for r in chosen]
+
+    def search_articles_service(self, query, language=None):
+        """Search for articles matching the query."""
+        try:
+            if language is None:
+                language = self.default_language
+
+            logging.info(f"Searching for article with query: '{query}' in language: {language}")
+
+            # Call the model's search_articles method
+            articles = self.articleModel.search_articles_model(query, language)
+
+            return [self.format_article(article) for article in articles]
+        except Exception as e:
+            logging.exception(f"Error in search_articles: {e}")
+            raise

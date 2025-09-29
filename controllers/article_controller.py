@@ -233,3 +233,21 @@ def trending_articles():
         return jsonify({"articles": data}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@article_controller.route('/api/articles/search', methods=['GET'])
+def search_articles_cont():
+    """Search for articles by query across multiple fields (unique_id_url, title, slug, article_detail)."""
+    try:
+        # Get the search query and language from the request
+        query = request.args.get('query', '').strip()
+        language = request.args.get('language', default_language)
+
+        if not query:
+            return jsonify({"error": "Search query is required"}), 400
+
+        # Call the service method to get the articles matching the query
+        articles = article_service.search_articles_service(query, language)
+
+        return jsonify({"articles": articles}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
