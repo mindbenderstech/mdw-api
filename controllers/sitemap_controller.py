@@ -49,19 +49,28 @@ def language_sitemap(lang):
     host_url = "https://www.theheadlineworld.com"
     article_model = ArticleModel()
 
-    # Get current time
     now = datetime.now(timezone.utc)
 
-    # Set your timeframe for recent articles (e.g., last 24 hours)
+    # First try: last 2 days
     time_threshold = now - timedelta(days=2)
 
     # Filter articles that are within the last 24 hours
     recent_articles = sorted(
-        [article for article in article_model.get_all_articles(lang)
-         if article.get("article_date_and_time") and article["article_date_and_time"] > time_threshold],
-        key=lambda a: a.get("article_date_and_time") or datetime.min,
+        [a for a in article_model.get_all_articles(lang)
+         if a.get("created_at") and a["created_at"] > time_threshold],
+        key=lambda a: a.get("created_at") or datetime.min,
         reverse=True
     )
+
+    # Fallback: if no articles in last 2 days, try last 5 days
+    if not recent_articles:
+        time_threshold = now - timedelta(days=4)
+        recent_articles = sorted(
+            [a for a in article_model.get_all_articles(lang)
+             if a.get("created_at") and a["created_at"] > time_threshold],
+            key=lambda a: a.get("created_at") or datetime.min,
+            reverse=True
+        )
 
     urlset = Et.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
 
@@ -70,7 +79,11 @@ def language_sitemap(lang):
             continue
 
         loc = f"{host_url}/news/{lang}/{article['unique_id_url']}"
-        lastmod = article["article_date_and_time"].isoformat() if article.get("article_date_and_time") else None
+        lastmod = (
+            article["article_date_and_time"].isoformat()
+            if article.get("article_date_and_time")
+            else None
+        )
 
         url_tag = Et.SubElement(urlset, "url")
         Et.SubElement(url_tag, "loc").text = loc
