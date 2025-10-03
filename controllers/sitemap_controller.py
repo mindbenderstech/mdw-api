@@ -1,8 +1,7 @@
 import xml.etree.ElementTree as Et
 from flask import Blueprint, Response
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from models.article_model import ArticleModel
-from datetime import timedelta
 from lang_config import LANGUAGE_TABLES
 
 sitemap_controller = Blueprint('sitemap_controller', __name__)
@@ -38,6 +37,13 @@ def sitemap_index():
         Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-{lang}.xml"
         Et.SubElement(sitemap, "lastmod").text = latest_timestamp
 
+    # ✅ Add global news and all sitemaps
+    today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+    for special in ["news", "all"]:
+        sitemap = Et.SubElement(sitemapindex, "sitemap")
+        Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-{special}.xml"
+        Et.SubElement(sitemap, "lastmod").text = today
+
     xml_data = Et.tostring(sitemapindex, encoding='utf-8', method='xml')
     return Response(xml_data, mimetype='application/xml')
 
@@ -54,7 +60,6 @@ def language_sitemap(lang):
     # First try: last 2 days
     time_threshold = now - timedelta(days=2)
 
-    # Filter articles that are within the last 24 hours
     recent_articles = sorted(
         [a for a in article_model.get_all_articles(lang)
          if a.get("created_at") and a["created_at"] > time_threshold],
@@ -62,7 +67,7 @@ def language_sitemap(lang):
         reverse=True
     )
 
-    # Fallback: if no articles in last 2 days, try last 5 days
+    # Fallback: last 4 days if no recent
     if not recent_articles:
         time_threshold = now - timedelta(days=4)
         recent_articles = sorted(
@@ -91,6 +96,129 @@ def language_sitemap(lang):
             Et.SubElement(url_tag, "lastmod").text = lastmod
         Et.SubElement(url_tag, "changefreq").text = "daily"
         Et.SubElement(url_tag, "priority").text = "0.8"
+
+    xml_data = Et.tostring(urlset, encoding='utf-8', method='xml')
+    return Response(xml_data, mimetype='application/xml')
+
+# ✅ News sitemap (last 48h across all languages)
+@sitemap_controller.route('/sitemap-news.xml')
+def news_sitemap():
+    host_url = "https://www.theheadlineworld.com"
+    article_model = ArticleModel()
+    now = datetime.now(timezone.utc)
+    time_threshold = now - timedelta(days=2)
+
+    articles = []
+    for lang in LANGUAGE_TABLES.keys():
+        arts = article_model.get_all_articles(lang)
+        articles.extend([(lang, a) for a in arts if a.get("created_at") and a["created_at"] > time_threshold])
+
+    if not articles:
+        time_threshold = now - timedelta(days=4)
+        for lang in LANGUAGE_TABLES.keys():
+            arts = article_model.get_all_articles(lang)
+            articles.extend([
+                (lang, a) for a in arts
+                if a.get("created_at") and a["created_at"] > time_threshold
+            ])
+
+    articles.sort(key=lambda x: x[1].get("created_at") or datetime.min, reverse=True)
+
+    urlset = Et.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+    for lang, article in articles:
+        if not article.get("unique_id_url"):
+            continue
+        loc = f"{host_url}/news/{lang}/{article['unique_id_url']}"
+        lastmod = (
+            article["article_date_and_time"].isoformat()
+            if article.get("article_date_and_time")
+            else None
+        )
+        url_tag = Et.SubElement(urlset, "url")
+        Et.SubElement(url_tag, "loc").text = loc
+        if lastmod:
+            Et.SubElement(url_tag, "lastmod").text = lastmod
+        Et.SubElement(url_tag, "changefreq").text = "hourly"
+        Et.SubElement(url_tag, "priority").text = "1.0"
+
+    xml_data = Et.tostring(urlset, encoding='utf-8', method='xml')
+    return Response(xml_data, mimetype='application/xml')
+
+
+# ✅ All sitemap index (splits by year-month)
+@sitemap_controller.route('/sitemap-all.xml')
+def all_sitemap_index():
+    host_url = "https://api.theheadlineworld.com"
+    article_model = ArticleModel()
+
+    # Collect all articles across languages
+    articles = []
+    for lang in LANGUAGE_TABLES.keys():
+        arts = article_model.get_all_articles(lang)
+        articles.extend(arts)
+
+    # Group by year-month from created_at
+    groups = {}
+    for a in articles:
+        if not a.get("created_at"):
+            continue
+        dt = a["created_at"]
+        ym = dt.strftime("%Y-%B")  # year-month
+        if ym not in groups:
+            groups[ym] = dt
+        else:
+            # keep the latest date as lastmod
+            if dt > groups[ym]:
+                groups[ym] = dt
+
+    sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+    for ym, last_dt in sorted(groups.items(), reverse=True):
+        sitemap = Et.SubElement(sitemapindex, "sitemap")
+        Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-all-{ym}.xml"
+        Et.SubElement(sitemap, "lastmod").text = last_dt.strftime("%Y-%m-%d")
+
+    xml_data = Et.tostring(sitemapindex, encoding='utf-8', method='xml')
+    return Response(xml_data, mimetype='application/xml')
+
+
+# ✅ Child sitemaps by year-month
+@sitemap_controller.route('/sitemap-all-<year>-<month>.xml')
+def all_sitemap_by_month(year, month):
+    try:
+        month_num = datetime.strptime(month, "%B").month
+    except ValueError:
+        return Response("Invalid month", status=400)
+    host_url = "https://www.theheadlineworld.com"
+    article_model = ArticleModel()
+
+    articles = []
+    for lang in LANGUAGE_TABLES.keys():
+        arts = article_model.get_all_articles(lang)
+        for a in arts:
+            if not a.get("created_at"):
+                continue
+            dt = a["created_at"]
+            if dt.year == int(year) and dt.month == month_num:
+                articles.append((lang, a))
+
+    articles.sort(key=lambda x: x[1].get("created_at") or datetime.min, reverse=True)
+
+    urlset = Et.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
+    for lang, article in articles:
+        if not article.get("unique_id_url"):
+            continue
+        loc = f"{host_url}/news/{lang}/{article['unique_id_url']}"
+        lastmod = (
+            article["article_date_and_time"].isoformat()
+            if article.get("article_date_and_time")
+            else None
+        )
+        url_tag = Et.SubElement(urlset, "url")
+        Et.SubElement(url_tag, "loc").text = loc
+        if lastmod:
+            Et.SubElement(url_tag, "lastmod").text = lastmod
+        Et.SubElement(url_tag, "changefreq").text = "weekly"
+        Et.SubElement(url_tag, "priority").text = "0.5"
 
     xml_data = Et.tostring(urlset, encoding='utf-8', method='xml')
     return Response(xml_data, mimetype='application/xml')
