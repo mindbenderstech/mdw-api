@@ -15,10 +15,8 @@ sitemap_controller = Blueprint('sitemap_controller', __name__)
 # """, mimetype='text/plain')
 
 @sitemap_controller.route('/sitemap.xml')
-@sitemap_controller.route('/sitemap.xml')
 def sitemap_index():
-    sitemap_host = "https://api.theheadlineworld.com"
-    site_host = "https://www.theheadlineworld.com"
+    sitemap_host = "https://www.theheadlineworld.com"
 
     sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     article_model = ArticleModel()
@@ -27,7 +25,6 @@ def sitemap_index():
         articles = article_model.get_all_articles(lang)
         latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
-        latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d')  # fallback
         if articles:
             latest_created_at = max(
                 (a.get("created_at") for a in articles if a.get("created_at")),
@@ -38,7 +35,7 @@ def sitemap_index():
                 latest_timestamp = latest_created_at.strftime('%Y-%m-%d')
 
         sitemap = Et.SubElement(sitemapindex, "sitemap")
-        # ✅ Keep a sitemap file on API, but reference www URLs inside those sitemaps
+        # ✅ Sub-sitemap locations are now under www domain
         Et.SubElement(sitemap, "loc").text = f"{sitemap_host}/sitemap-{lang}.xml"
         Et.SubElement(sitemap, "lastmod").text = latest_timestamp
 
@@ -153,7 +150,7 @@ def news_sitemap():
 # ✅ All sitemap index (splits by year-month)
 @sitemap_controller.route('/sitemap-all.xml')
 def all_sitemap_index():
-    sitemap_host = "https://api.theheadlineworld.com"
+    sitemap_host = "https://www.theheadlineworld.com"
     article_model = ArticleModel()
     articles = []
     for lang in LANGUAGE_TABLES.keys():
@@ -171,7 +168,6 @@ def all_sitemap_index():
     sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     for ym, last_dt in sorted(groups.items(), reverse=True):
         sitemap = Et.SubElement(sitemapindex, "sitemap")
-        # ✅ Sitemap files stay under API domain
         Et.SubElement(sitemap, "loc").text = f"{sitemap_host}/sitemap-all-{ym}.xml"
         Et.SubElement(sitemap, "lastmod").text = last_dt.strftime('%Y-%m-%d')
 
