@@ -15,13 +15,17 @@ sitemap_controller = Blueprint('sitemap_controller', __name__)
 # """, mimetype='text/plain')
 
 @sitemap_controller.route('/sitemap.xml')
+@sitemap_controller.route('/sitemap.xml')
 def sitemap_index():
-    host_url = "https://api.theheadlineworld.com"  # Correct domain for the sitemap
+    sitemap_host = "https://api.theheadlineworld.com"
+    site_host = "https://www.theheadlineworld.com"
+
     sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     article_model = ArticleModel()
 
     for lang in LANGUAGE_TABLES.keys():
         articles = article_model.get_all_articles(lang)
+        latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
         latest_timestamp = datetime.now(timezone.utc).strftime('%Y-%m-%d')  # fallback
         if articles:
@@ -34,14 +38,15 @@ def sitemap_index():
                 latest_timestamp = latest_created_at.strftime('%Y-%m-%d')
 
         sitemap = Et.SubElement(sitemapindex, "sitemap")
-        Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-{lang}.xml"
+        # ✅ Keep a sitemap file on API, but reference www URLs inside those sitemaps
+        Et.SubElement(sitemap, "loc").text = f"{sitemap_host}/sitemap-{lang}.xml"
         Et.SubElement(sitemap, "lastmod").text = latest_timestamp
 
-    # ✅ Add global news and all sitemaps
+    # ✅ Add news & archive sitemap pointers
     today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
     for special in ["news", "all"]:
         sitemap = Et.SubElement(sitemapindex, "sitemap")
-        Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-{special}.xml"
+        Et.SubElement(sitemap, "loc").text = f"{sitemap_host}/sitemap-{special}.xml"
         Et.SubElement(sitemap, "lastmod").text = today
 
     xml_data = Et.tostring(sitemapindex, encoding='utf-8', method='xml')
@@ -148,34 +153,27 @@ def news_sitemap():
 # ✅ All sitemap index (splits by year-month)
 @sitemap_controller.route('/sitemap-all.xml')
 def all_sitemap_index():
-    host_url = "https://api.theheadlineworld.com"
+    sitemap_host = "https://api.theheadlineworld.com"
     article_model = ArticleModel()
-
-    # Collect all articles across languages
     articles = []
     for lang in LANGUAGE_TABLES.keys():
-        arts = article_model.get_all_articles(lang)
-        articles.extend(arts)
+        articles.extend(article_model.get_all_articles(lang))
 
-    # Group by year-month from created_at
     groups = {}
     for a in articles:
         if not a.get("created_at"):
             continue
         dt = a["created_at"]
-        ym = dt.strftime("%Y-%B")  # year-month
-        if ym not in groups:
+        ym = dt.strftime("%Y-%B")
+        if ym not in groups or dt > groups[ym]:
             groups[ym] = dt
-        else:
-            # keep the latest date as lastmod
-            if dt > groups[ym]:
-                groups[ym] = dt
 
     sitemapindex = Et.Element("sitemapindex", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     for ym, last_dt in sorted(groups.items(), reverse=True):
         sitemap = Et.SubElement(sitemapindex, "sitemap")
-        Et.SubElement(sitemap, "loc").text = f"{host_url}/sitemap-all-{ym}.xml"
-        Et.SubElement(sitemap, "lastmod").text = last_dt.strftime("%Y-%m-%d")
+        # ✅ Sitemap files stay under API domain
+        Et.SubElement(sitemap, "loc").text = f"{sitemap_host}/sitemap-all-{ym}.xml"
+        Et.SubElement(sitemap, "lastmod").text = last_dt.strftime('%Y-%m-%d')
 
     xml_data = Et.tostring(sitemapindex, encoding='utf-8', method='xml')
     return Response(xml_data, mimetype='application/xml')
