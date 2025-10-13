@@ -112,17 +112,21 @@ def get_article_by_unique_id_url(unique_id_url):
 
 # To get news articles by category keyword in the URL
 @article_controller.route('/api/articles/category/<category>', methods=['GET'])
-def get_articles_by_category(category):
-    """Fetch and return articles filtered by category keyword in URL"""
-    try:
-        # Retrieve language from query parameters, default to 'hindi'
-        language = request.args.get('language', default_language)
+def category_articles(category):
+    language = request.args.get('language', default_language)
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))  # Show 6 per page (you can change)
+    offset = (page - 1) * limit
 
-        # Call the service to get articles by category and language
-        articles = article_service.get_articles_by_category(category, language)
-        return jsonify({"articles": articles}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    data = article_service.category(category, language, limit, offset)
+    total_articles = article_service.count_articles_in_category(category, language)
+
+    return jsonify({
+        "articles": data,
+        "page": page,
+        "limit": limit,
+        "total": total_articles
+    }), 200
 
 @article_controller.route('/api/languages', methods=['GET'])
 def get_supported_languages():
@@ -203,6 +207,7 @@ def submit_article():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 @article_controller.route('/api/articles/latest', methods=['GET'])
 def latest_articles():
     try:

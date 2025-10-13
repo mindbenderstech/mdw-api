@@ -190,10 +190,10 @@ class ArticleService:
         rows = self.articleModel.get_latest_articles(language, limit, offset)
         return [self.format_article(r) for r in rows]
 
-    def category(self, category_keyword, language=None, limit=8):
-        language = language or self.default_language
-        rows = self.articleModel.get_category_articles(language, category_keyword, limit)
-        return [self.format_article(r) for r in rows]
+    # def category(self, category_keyword, language=None, limit=8):
+    #     language = language or self.default_language
+    #     rows = self.articleModel.get_category_articles(language, category_keyword, limit)
+    #     return [self.format_article(r) for r in rows]
 
     def trending(self, language=None, pick=5):
         language = language or self.default_language
@@ -201,6 +201,15 @@ class ArticleService:
         # sample in memory (cheap; pool is small)
         chosen = random.sample(pool, k=min(pick, len(pool)))
         return [self.format_article(r) for r in chosen]
+
+    def category(self, category_keyword, language=None, limit=8, offset=0):
+        language = language or self.default_language
+        rows = self.articleModel.get_category_articles(language, category_keyword, limit, offset)
+        return [self.format_article(r) for r in rows]
+
+    def count_articles_in_category(self, category_keyword, language=None):
+        language = language or self.default_language
+        return self.articleModel.count_category_articles(language, category_keyword)
 
     def search_articles_service(self, query, language=None):
         """Search for articles matching the query."""

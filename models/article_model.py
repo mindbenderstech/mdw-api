@@ -82,8 +82,28 @@ class ArticleModel:
         cur.close(); conn.close()
         return rows
 
+    # @staticmethod
+    # def get_category_articles(language, category_keyword, limit=8):
+    #     table = LANGUAGE_TABLES.get(language)
+    #     if not table: raise ValueError(f"Language '{language}' is not supported.")
+    #     conn = get_db_connection()
+    #     cur = conn.cursor()
+    #     # Use ILIKE for case-insensitive search; index advice below
+    #     cur.execute(f"""
+    #         SELECT id, unique_id, unique_id_url, news_source_url, title, slug, image_path,
+    #                byline_author, article_detail, created_at, article_date, article_date_and_time
+    #         FROM {table}
+    #         WHERE news_source_url ILIKE %s
+    #         ORDER BY article_date_and_time DESC
+    #         LIMIT %s
+    #     """, (f"%{category_keyword}%", limit))
+    #     cols = [c[0] for c in cur.description]
+    #     rows = [dict(zip(cols, r)) for r in cur.fetchall()]
+    #     cur.close(); conn.close()
+    #     return rows
+
     @staticmethod
-    def get_category_articles(language, category_keyword, limit=8):
+    def get_category_articles(language, category_keyword, limit=8, offset=0):
         table = LANGUAGE_TABLES.get(language)
         if not table: raise ValueError(f"Language '{language}' is not supported.")
         conn = get_db_connection()
@@ -95,11 +115,12 @@ class ArticleModel:
             FROM {table}
             WHERE news_source_url ILIKE %s
             ORDER BY article_date_and_time DESC
-            LIMIT %s
-        """, (f"%{category_keyword}%", limit))
+            LIMIT %s OFFSET %s
+        """, (f"%{category_keyword}%", limit, offset))
         cols = [c[0] for c in cur.description]
         rows = [dict(zip(cols, r)) for r in cur.fetchall()]
-        cur.close(); conn.close()
+        cur.close();
+        conn.close()
         return rows
 
     @staticmethod
@@ -124,31 +145,53 @@ class ArticleModel:
 
     @staticmethod
     def search_articles_model(query, language):
-        """Search for articles matching the query across multiple fields."""
-        table_name = LANGUAGE_TABLES.get(language)  # Get the table name dynamically
+        """Search for articles matching the query across multiple fields (newest first)."""
+        table_name = LANGUAGE_TABLES.get(language)
         if not table_name:
-            raise ValueError(f"Language '{language}' is not supported.")  # Raise error if language is not supported
+            raise ValueError(f"Language '{language}' is not supported.")
 
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
 
-            # Use ILIKE for case-insensitive search
+            # Case-insensitive search and newest first ordering
             cursor.execute(f"""
-                SELECT id, unique_id, unique_id_url, news_source_url, title, slug, image_path, byline_author, article_detail, created_at, article_date, article_date_and_time
+                SELECT id, unique_id, unique_id_url, news_source_url, title, slug, image_path,
+                       byline_author, article_detail, created_at, article_date, article_date_and_time
                 FROM {table_name}
-                WHERE unique_id_url ILIKE %s OR title ILIKE %s OR slug ILIKE %s OR article_detail ILIKE %s;
+                WHERE unique_id_url ILIKE %s
+                   OR title ILIKE %s
+                   OR slug ILIKE %s
+                   OR article_detail ILIKE %s
+                ORDER BY article_date_and_time DESC;
             """, (f"%{query}%", f"%{query}%", f"%{query}%", f"%{query}%"))
 
-            columns = [column[0] for column in cursor.description]  # Get column names
+            columns = [column[0] for column in cursor.description]
             rows = cursor.fetchall()
 
-            # Convert each row to a dictionary
             articles = [dict(zip(columns, row)) for row in rows]
 
             cursor.close()
             conn.close()
             return articles
+
         except Exception as e:
             print(f"Error fetching articles with search query '{query}': {e}")
             return []
+
+    @staticmethod
+    def count_category_articles(language, category_keyword):
+        table = LANGUAGE_TABLES.get(language)
+        if not table:
+            raise ValueError(f"Language '{language}' is not supported.")
+
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(f"""
+            SELECT COUNT(*) FROM {table}
+            WHERE news_source_url ILIKE %s;
+        """, (f"%{category_keyword}%",))
+        count = cur.fetchone()[0]
+        cur.close();
+        conn.close()
+        return count
