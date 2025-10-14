@@ -124,7 +124,7 @@ def news_sitemap():
                 if a.get("created_at") and a["created_at"] > time_threshold
             ])
 
-    articles.sort(key=lambda x: x[1].get("created_at") or datetime.min, reverse=True)
+    articles.sort(key=lambda x: x[1].get("article_date_and_time") or datetime.min, reverse=True)
 
     urlset = Et.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     for lang, article in articles:
@@ -195,7 +195,7 @@ def all_sitemap_by_month(year, month):
             if dt.year == int(year) and dt.month == month_num:
                 articles.append((lang, a))
 
-    articles.sort(key=lambda x: x[1].get("created_at") or datetime.min, reverse=True)
+    articles.sort(key=lambda x: x[1].get("article_date_and_time") or datetime.min, reverse=True)
 
     urlset = Et.Element("urlset", xmlns="http://www.sitemaps.org/schemas/sitemap/0.9")
     for lang, article in articles:
